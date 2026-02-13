@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pyodbc
 import uvicorn
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -65,6 +66,18 @@ def search_rooms(q: str = ""):
     
     conn.close()
     return results
+
+class QuestionRequest(BaseModel):
+    content: str
+
+@app.post("/api/chat")
+async def chat_with_ai(request: QuestionRequest):
+
+    user_question = request.content
+    return {
+        "answer": f"Tôi đang xử lý câu hỏi: '{user_question}'. (Hiện tại AI chưa được tích hợp, đây là tin nhắn mẫu từ Server).",
+        "sources": ["Tài liệu demo 1", "Tài liệu demo 2"]
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
