@@ -1,0 +1,18 @@
+# --- Core API & Server ---
+fastapi==0.109.0
+uvicorn==0.27.0
+python-dotenv==1.0.1
+requests==2.31.0
+
+# --- Database & Data Processing ---
+pyodbc==5.0.1
+sqlalchemy==2.0.25
+pandas==2.2.0
+openpyxl==3.1.2
+
+# --- AI & RAG (LangChain, Vector DB) ---
+langchain==0.1.5
+langchain-community==0.0.17
+sentence-transformers==2.3.1
+faiss-cpu==1.7.4
+pypdf==4.0.1
