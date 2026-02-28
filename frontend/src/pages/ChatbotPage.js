@@ -7,22 +7,43 @@ export default function ChatbotPage() {
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
-    if (!input) return;
+    if (!input.trim()) return;
 
     const newMessages = [...messages, { text: input, isUser: true }];
     setMessages(newMessages);
     setInput("");
-
-    // giả lập AI delay
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+
+      const res = await fetch("http://localhost:8000/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ content: input })
+      });
+
+      if (!res.ok) {
+        throw new Error("Server không phản hồi");
+      }
+
+      const data = await res.json();
+      
+
       setMessages([
         ...newMessages,
-        { text: "AI đang xử lý trên server...", isUser: false }
+        { text: data.answer, isUser: false }
       ]);
+    } catch (err) {
+      console.error(err);
+      setMessages([
+        ...newMessages,
+        { text: "Lỗi: Không gọi được AI. Hãy kiểm tra lại Server Backend!", isUser: false }
+      ]);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -42,16 +63,19 @@ export default function ChatbotPage() {
           <ChatMessage key={i} {...m} />
         ))}
 
-        {loading && <p>AI đang suy nghĩ...</p>}
+        {loading && <p>AI đang suy nghĩ... </p>}
       </div>
 
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Nhập câu hỏi..."
-      />
-
-      <button onClick={sendMessage}>Gửi</button>
+      <div style={{ display: "flex", gap: "10px" }}>
+          <input
+            style={{ flex: 1 }}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Nhập câu hỏi..."
+          />
+          <button onClick={sendMessage}>Gửi</button>
+      </div>
     </div>
   );
 }

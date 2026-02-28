@@ -1,11 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import pyodbc
 import uvicorn
-from pydantic import BaseModel
+from ai_service import ai_router, init_ai
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_ai()
+    yield
 
+app = FastAPI(title="F-Survival API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,7 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 SERVER = r'DESKTOP-81G9JFQ\SQLEXPRESS'
 DATABASE = 'PhongTroDB'
 DRIVER = 'SQL Server' 
@@ -24,60 +28,35 @@ def get_db_connection():
     conn_str = f'DRIVER={{{DRIVER}}};SERVER={SERVER};DATABASE={DATABASE};Trusted_Connection=yes;'
     return pyodbc.connect(conn_str)
 
-# 3. CÁC API
-
 @app.get("/")
 def read_root():
-    return {"message": "Server Phòng Trọ đang chạy và kết nối SQL Server thành công!"}
-
+    return {"message": "Server F-Survival đang chạy trơn tru!"}
 
 @app.get("/api/rooms")
 def get_rooms():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
-
         cursor.execute("SELECT * FROM rooms")
-        
-
         columns = [column[0] for column in cursor.description]
-        results = []
-        for row in cursor.fetchall():
-            results.append(dict(zip(columns, row)))
-            
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
         conn.close()
         return results
     except Exception as e:
         return {"error": str(e)}
 
-
 @app.get("/api/rooms/search")
 def search_rooms(q: str = ""):
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-
     query = f"SELECT * FROM rooms WHERE name LIKE N'%{q}%' OR address LIKE N'%{q}%'"
     cursor.execute(query)
-    
     columns = [column[0] for column in cursor.description]
     results = [dict(zip(columns, row)) for row in cursor.fetchall()]
-    
     conn.close()
     return results
 
-class QuestionRequest(BaseModel):
-    content: str
-
-@app.post("/api/chat")
-async def chat_with_ai(request: QuestionRequest):
-
-    user_question = request.content
-    return {
-        "answer": f"Tôi đang xử lý câu hỏi: '{user_question}'. (Hiện tại AI chưa được tích hợp, đây là tin nhắn mẫu từ Server).",
-        "sources": ["Tài liệu demo 1", "Tài liệu demo 2"]
-    }
+app.include_router(ai_router)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
