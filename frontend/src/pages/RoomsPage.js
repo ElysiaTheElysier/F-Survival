@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import RoomCard from "../components/RoomCard";
 
-const BASE_URL = "https://crumbliest-warty-hildegard.ngrok-free.dev"; // sửa link ngrok của bạn
+const BASE_URL = "http://localhost:8000"; 
 
 export default function RoomsPage() {
   const [rooms, setRooms] = useState([]);
@@ -13,7 +13,6 @@ export default function RoomsPage() {
     fetchRooms();
   }, []);
 
-  // ===== lấy danh sách =====
   const fetchRooms = async () => {
     try {
       setLoading(true);
@@ -31,16 +30,23 @@ export default function RoomsPage() {
       }
 
       const data = await res.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      if (!Array.isArray(data)) {
+        throw new Error("Dữ liệu trả về không phải là mảng!");
+      }
+
       setRooms(data);
     } catch (err) {
       console.error(err);
-      setError("Không gọi được API — kiểm tra backend hoặc CORS");
+      setError(err.message || "Không gọi được API — kiểm tra backend hoặc CORS");
     } finally {
       setLoading(false);
     }
   };
 
-  // ===== tìm kiếm =====
   const searchRooms = async () => {
     if (!keyword) return fetchRooms();
 
@@ -63,10 +69,18 @@ export default function RoomsPage() {
       }
 
       const data = await res.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      if (!Array.isArray(data)) {
+        throw new Error("Dữ liệu trả về không phải là mảng!");
+      }
+
       setRooms(data);
     } catch (err) {
       console.error(err);
-      setError("Lỗi tìm kiếm — kiểm tra backend");
+      setError(err.message || "Lỗi tìm kiếm — kiểm tra backend");
     } finally {
       setLoading(false);
     }
@@ -74,22 +88,29 @@ export default function RoomsPage() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>🏠 Tìm phòng trọ</h1>
+      <h1>🏠 Tìm phòng trọ AI</h1>
 
       <div style={{ marginBottom: 20 }}>
         <input
-          placeholder="Tìm theo tên hoặc địa chỉ..."
+          placeholder="Nhập yêu cầu: Ví dụ 'phòng 2 củ rưỡi có điều hòa'..."
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && searchRooms()}
+          style={{ width: "300px", marginRight: "10px" }}
         />
 
         <button onClick={searchRooms}>Tìm</button>
       </div>
 
-      {loading && <p>Đang tải dữ liệu...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {loading && <p>AI đang phân tích và tìm kiếm...</p>}
+      
+      {error && <p style={{ color: "red", fontWeight: "bold" }}>LỖI: {error}</p>}
 
-      {rooms.map((room, index) => (
+      {!loading && !error && rooms.length === 0 && (
+          <p>Không tìm thấy phòng trọ nào phù hợp với yêu cầu của bạn.</p>
+      )}
+
+      {Array.isArray(rooms) && rooms.map((room, index) => (
         <RoomCard key={index} room={room} />
       ))}
     </div>

@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 import os
+import json
+import re
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -8,14 +10,13 @@ from langchain_ollama import OllamaLLM
 from langchain_core.prompts import PromptTemplate
 
 ai_router = APIRouter()
-
 vectorstore = None
 llm = None
 
 def init_ai():
     global vectorstore, llm
     
-    llm = OllamaLLM(model="vistral")
+    llm = OllamaLLM(model="vistral", temperature=0.1)
     embeddings = HuggingFaceEmbeddings(model_name="keepitreal/vietnamese-sbert")
     
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -36,7 +37,7 @@ def init_ai():
             break
             
     if not md_path:
-        raise FileNotFoundError("Không tìm thấy file fpt_full_data.md!")
+        raise FileNotFoundError("Khong tim thay file fpt_full_data.md")
         
     if os.path.exists(index_path):
         vectorstore = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
@@ -56,9 +57,8 @@ class QuestionRequest(BaseModel):
 async def chat_with_ai(request: QuestionRequest):
     global vectorstore, llm
     if not vectorstore or not llm:
-        return {"answer": "AI đang ngủ, vui lòng thử lại sau!", "sources": []}
+        return {"answer": "AI dang ngu, vui long thu lai sau!", "sources": []}
         
-
     docs = vectorstore.similarity_search(request.content, k=5)
     context = ""
     sources = []
@@ -68,27 +68,22 @@ async def chat_with_ai(request: QuestionRequest):
         if source_name not in sources:
             sources.append(source_name)
 
-
-    print("\n" + "="*50)
-    print("🤖 CÂU HỎI: ", request.content)
-    print("📚 TÀI LIỆU CUNG CẤP CHO AI ĐỌC:")
-    print(context)
-    print("="*50 + "\n")
-
-
     prompt_template = PromptTemplate(
         input_variables=["context", "question"],
         template="""<s>[INST] <<SYS>>
 Bạn là F-Survival, trợ lý ảo thông minh cho sinh viên Đại học FPT. 
-Nhiệm vụ của bạn là trả lời câu hỏi CHỈ DỰA VÀO phần TÀI LIỆU THAM KHẢO được cung cấp.
-Tuyệt đối KHÔNG tự bịa ra thông tin, KHÔNG lấy kiến thức bên ngoài, KHÔNG nhầm lẫn giữa các môn học. 
-Nếu tài liệu KHÔNG có chứa câu trả lời, hãy nói chính xác câu: "Xin lỗi, tôi chưa tìm thấy thông tin này trong dữ liệu."
+Xưng "mình" và "bạn". Trình bày rõ ràng.
+
+QUY TẮC:
+1. CHỈ DỰA VÀO TÀI LIỆU dưới đây để trả lời.
+2. Tóm tắt tự nhiên, dễ hiểu.
+3. Nếu không có thông tin, hãy nói chưa cập nhật và khuyên hỏi Phòng Dịch vụ sinh viên.
 <</SYS>>
 
-TÀI LIỆU THAM KHẢO:
+TÀI LIỆU:
 {context}
 
-CÂU HỎI CỦA SINH VIÊN: {question} [/INST]"""
+CÂU HỎI: {question} [/INST]"""
     )
 
     chain = prompt_template | llm
@@ -98,3 +93,39 @@ CÂU HỎI CỦA SINH VIÊN: {question} [/INST]"""
         "answer": response,
         "sources": sources
     }
+
+json_extraction_prompt = PromptTemplate(
+    input_variables=["user_input"],
+    template="""<s>[INST] <<SYS>>
+Bạn là hệ thống trích xuất dữ liệu phòng trọ. 
+Chỉ trả về JSON, TUYỆT ĐỐI KHÔNG giải thích.
+
+Quy tắc TỐI QUAN TRỌNG:
+1. Tiền tệ: "củ", "triệu" = 1000000. Ví dụ "1 triệu 5" -> 1500000.
+2. Từ khóa tiện ích: Người dùng gõ từ gì, lấy ĐÚNG từ đó. Ví dụ họ gõ "nội thất đầy đủ" hoặc "full đồ", CHỈ lấy "nội thất đầy đủ" hoặc "full đồ". TUYỆT ĐỐI KHÔNG tự suy diễn thành danh sách (điều hòa, nóng lạnh...).
+
+Cấu trúc:
+{{
+  "max_price": (số hoặc null),
+  "min_price": (số hoặc null),
+  "amenities": [(các từ khóa xuất hiện trong câu)]
+}}
+<</SYS>>
+Câu tìm kiếm: "{user_input}" [/INST]"""
+)
+
+def extract_search_filters(user_input: str):
+    global llm
+    if not llm:
+        return {"max_price": None, "min_price": None, "amenities": []}
+    
+    try:
+        raw_result = llm.invoke(json_extraction_prompt.format(user_input=user_input))
+        match = re.search(r'\{.*\}', raw_result, re.DOTALL)
+        if match:
+            clean_json = match.group(0)
+            return json.loads(clean_json)
+    except Exception:
+        pass
+        
+    return {"max_price": None, "min_price": None, "amenities": []}
