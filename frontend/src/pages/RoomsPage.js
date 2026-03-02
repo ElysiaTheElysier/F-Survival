@@ -1,77 +1,86 @@
 import { useEffect, useState } from "react";
+import {
+  TextField,
+  Grid,
+  Box,
+  Typography,
+  Paper,
+  Button,
+  CircularProgress
+} from "@mui/material";
 import RoomCard from "../components/RoomCard";
-
-const BASE_URL = "http://localhost:8000";
 
 export default function RoomsPage() {
   const [rooms, setRooms] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
+  // 🔥 Lấy danh sách phòng khi load trang
   useEffect(() => {
     fetchRooms();
   }, []);
 
   const fetchRooms = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError("");
-
-      const res = await fetch(`${BASE_URL}/api/rooms`);
-
-      if (!res.ok) throw new Error();
-
+      const res = await fetch("http://localhost:8000/api/rooms");
       const data = await res.json();
       setRooms(data);
-    } catch (err) {
-      setError("Không gọi được API rooms — kiểm tra backend hoặc CORS");
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("Lỗi lấy phòng:", error);
     }
+    setLoading(false);
   };
 
+  // 🔥 Tìm kiếm phòng
   const searchRooms = async () => {
-    if (!keyword.trim()) return fetchRooms();
+    if (!keyword) {
+      fetchRooms();
+      return;
+    }
 
+    setLoading(true);
     try {
-      setLoading(true);
-      setError("");
-
       const res = await fetch(
-        `${BASE_URL}/api/rooms/search?q=${keyword}`
+        `http://localhost:8000/api/rooms/search?q=${keyword}`
       );
-
-      if (!res.ok) throw new Error();
-
       const data = await res.json();
       setRooms(data);
-    } catch (err) {
-      setError("Lỗi tìm kiếm — kiểm tra backend");
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("Lỗi tìm kiếm:", error);
     }
+    setLoading(false);
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>🏠 Tìm phòng trọ</h1>
+    <>
+      <Paper elevation={3} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
+        <Typography variant="h5" fontWeight="bold" mb={2}>
+          🏠 Tìm phòng trọ
+        </Typography>
 
-      <div style={{ marginBottom: 20 }}>
-        <input
-          placeholder="Tìm theo tên hoặc địa chỉ..."
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
-        <button onClick={searchRooms}>Tìm</button>
-      </div>
+        <Box display="flex" gap={2}>
+          <TextField
+            fullWidth
+            label="Nhập tên hoặc địa chỉ..."
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+          <Button variant="contained" onClick={searchRooms}>
+            Tìm
+          </Button>
+        </Box>
+      </Paper>
 
-      {loading && <p>Đang tải dữ liệu...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {loading && <CircularProgress />}
 
-      {rooms.map((room, index) => (
-        <RoomCard key={index} room={room} />
-      ))}
-    </div>
+      <Grid container spacing={3}>
+        {rooms.map((room) => (
+          <Grid item xs={12} md={6} key={room.id}>
+            <RoomCard room={room} />
+          </Grid>
+        ))}
+      </Grid>
+    </>
   );
 }

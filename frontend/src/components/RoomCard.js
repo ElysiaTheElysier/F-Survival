@@ -1,27 +1,64 @@
+import {
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  Box,
+  Chip
+} from "@mui/material";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PhoneIcon from "@mui/icons-material/Phone";
+
 export default function RoomCard({ room }) {
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN").format(price) + " vnđ/tháng";
-  };
+  const formatPrice = (price) =>
+    price?.toLocaleString("vi-VN") + " vnđ/tháng";
 
   return (
-    <div style={styles.card}>
-      <h3>{room.name}</h3>
+    <Card sx={{ borderRadius: 3 }}>
+      <CardMedia
+        component="img"
+        height="200"
+        image={room.image}
+        alt={room.name}
+      />
 
-      <p><b>💰 Giá:</b> {formatPrice(room.price)}</p>
-      <p><b>📍 Địa chỉ:</b> {room.address}</p>
-      <p><b>📐 Diện tích:</b> {room.area}</p>
-      <p><b>⚡ Tiện ích:</b> {room.utilities}</p>
-      <p><b>📞 Liên hệ:</b> {room.phone}</p>
-      <p>{room.description}</p>
-    </div>
+      <CardContent>
+        <Typography variant="h6" fontWeight="bold">
+          {room.name}
+        </Typography>
+
+        <Box display="flex" alignItems="center" mt={1}>
+          <LocationOnIcon fontSize="small" />
+          <Typography variant="body2" ml={1}>
+            {room.address}
+          </Typography>
+        </Box>
+
+        <Typography mt={1}>
+          Diện tích: <b>{room.area}</b>
+        </Typography>
+
+        <Typography mt={1}>
+          Tiện ích: {room.utilities}
+        </Typography>
+
+        <Box mt={2}>
+          <Chip
+            icon={<PhoneIcon />}
+            label={room.phone}
+            color="primary"
+          />
+        </Box>
+
+        <Typography
+          variant="h6"
+          color="error"
+          fontWeight="bold"
+          mt={2}
+        >
+          {formatPrice(room.price)}
+        </Typography>
+      </CardContent>
+    </Card>
   );
 }
-
-const styles = {
-  card: {
-    border: "1px solid #ddd",
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 10
-  }
-};

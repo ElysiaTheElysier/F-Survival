@@ -1,6 +1,12 @@
 import { useState } from "react";
-
-const BASE_URL = "http://localhost:8000";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  CircularProgress
+} from "@mui/material";
 
 export default function ChatbotPage() {
   const [messages, setMessages] = useState([]);
@@ -8,82 +14,110 @@ export default function ChatbotPage() {
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input) return;
 
-    const userMessage = { text: input, sender: "user" };
+    const userMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
 
     try {
-      const res = await fetch(`${BASE_URL}/api/chat`, {
+      const res = await fetch("http://localhost:8000/api/chat", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ content: input }),
+        body: JSON.stringify({ content: input })
       });
-
-      if (!res.ok) throw new Error();
 
       const data = await res.json();
 
-      const botMessage = {
-        text: data.answer,
+      const botReply = {
         sender: "bot",
-        sources: data.sources,
+        text: data.answer,
+        sources: data.sources
       };
 
-      setMessages((prev) => [...prev, botMessage]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { text: "Lỗi khi gọi API Chat 😢", sender: "bot" },
-      ]);
-    } finally {
-      setLoading(false);
+      setMessages((prev) => [...prev, botReply]);
+    } catch (error) {
+      console.error("Lỗi chat:", error);
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="chat-container">
-      <div className="messages">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`message ${msg.sender === "user" ? "user" : "bot"}`}
-          >
-            <div>{msg.text}</div>
+    <Paper
+      elevation={3}
+      sx={{
+        height: "75vh",
+        display: "flex",
+        flexDirection: "column",
+        p: 2,
+        borderRadius: 3
+      }}
+    >
+      <Typography variant="h6" mb={2}>
+        🤖 Chatbot AI
+      </Typography>
 
-            {msg.sources && msg.sources.length > 0 && (
-              <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
-                <strong>Nguồn:</strong>
-                <ul>
-                  {msg.sources.map((source, i) => (
-                    <li key={i}>{source}</li>
+      <Box flex={1} overflow="auto">
+        {messages.map((msg, index) => (
+          <Box
+            key={index}
+            textAlign={msg.sender === "user" ? "right" : "left"}
+            mb={2}
+          >
+            <Box
+              display="inline-block"
+              bgcolor={
+                msg.sender === "user" ? "#1e88e5" : "#e0e0e0"
+              }
+              color={msg.sender === "user" ? "white" : "black"}
+              p={2}
+              borderRadius={2}
+              maxWidth="80%"
+            >
+              <Typography>{msg.text}</Typography>
+
+              {/* 🔥 HIỂN THỊ SOURCES */}
+              {msg.sources && (
+                <Box mt={1}>
+                  <Typography
+                    variant="caption"
+                    fontWeight="bold"
+                  >
+                    Nguồn:
+                  </Typography>
+                  {msg.sources.map((s, i) => (
+                    <Typography
+                      key={i}
+                      variant="caption"
+                      display="block"
+                    >
+                      • {s}
+                    </Typography>
                   ))}
-                </ul>
-              </div>
-            )}
-          </div>
+                </Box>
+              )}
+            </Box>
+          </Box>
         ))}
 
-        {loading && (
-          <div className="message bot">
-            Đang suy nghĩ...
-          </div>
-        )}
-      </div>
+        {loading && <CircularProgress size={20} />}
+      </Box>
 
-      <div className="chat-input">
-        <input
-          placeholder="Nhập câu hỏi..."
+      <Box display="flex" gap={2} mt={2}>
+        <TextField
+          fullWidth
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          placeholder="Nhập câu hỏi..."
         />
-        <button onClick={sendMessage}>Gửi</button>
-      </div>
-    </div>
+        <Button variant="contained" onClick={sendMessage}>
+          Gửi
+        </Button>
+      </Box>
+    </Paper>
   );
 }
