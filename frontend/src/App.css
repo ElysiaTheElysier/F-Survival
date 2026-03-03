@@ -1,38 +1,153 @@
-.App {
-  text-align: center;
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f5f7fa;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.logo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #1677ff;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.nav-buttons button {
+  margin-left: 10px;
+  padding: 8px 16px;
+  border: none;
+  background: #1677ff;
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.search-box {
+  background: white;
+  padding: 20px;
+  margin: 20px auto;
+  width: 80%;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  display: flex;
+  gap: 10px;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+}
+
+.search-box button {
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  background: #1677ff;
+  color: white;
+  cursor: pointer;
+}
+
+.rooms-container {
+  width: 80%;
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.room-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  transition: 0.3s;
+}
+
+.room-card:hover {
+  transform: translateY(-5px);
+}
+
+.room-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.room-content {
+  padding: 15px;
+}
+
+.price {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1677ff;
+}
+
+/* CHATBOT */
+
+.chat-container {
+  width: 60%;
+  margin: 40px auto;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  height: 600px;
+}
+
+.messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.message {
+  margin-bottom: 15px;
+  max-width: 70%;
+  padding: 12px;
+  border-radius: 15px;
+}
+
+.user {
+  background: #1677ff;
   color: white;
+  margin-left: auto;
 }
 
-.App-link {
-  color: #61dafb;
+.bot {
+  background: #f1f3f5;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.chat-input {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #eee;
 }
+
+.chat-input input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 15px;
+  border: 1px solid #ddd;
+}
+
+.chat-input button {
+  margin-left: 10px;
+  padding: 12px 20px;
+  border-radius: 15px;
+  border: none;
+  background: #1677ff;
+  color: white;
+  cursor: pointer;
+}
+ 
